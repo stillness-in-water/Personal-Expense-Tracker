@@ -11,7 +11,7 @@ public class TransactionService {
 
     private final TransactionDAO dao = new TransactionDAO();
 
-    public void addTransaction(Transaction transaction)
+    public synchronized void addTransaction(Transaction transaction)
             throws Exception {
 
         if (transaction.getAmount() == null ||
