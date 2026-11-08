@@ -71,6 +71,14 @@ public class DashboardFrame extends JFrame {
         buildUI();
 
         refreshDashboard();
+      
+        private record DashboardData(
+        List<Transaction> transactions,
+        BigDecimal income,
+        BigDecimal expenses,
+        BigDecimal balance
+) {
+}
     }
 
     private void buildUI() {
@@ -456,51 +464,97 @@ public class DashboardFrame extends JFrame {
         }
     }
 
-    private void refreshDashboard() {
+ private void refreshDashboard() {
 
-        try {
+    new com.expense.util.DatabaseWorker<>(
+            () -> {
 
-            BigDecimal income =
-                    transactionService
-                            .getIncome(
-                                    user.getUserId()
-                            );
+                List<Transaction> transactions =
+                        transactionService
+                                .getTransactions(
+                                        user.getUserId()
+                                );
 
-            BigDecimal expenses =
-                    transactionService
-                            .getExpenses(
-                                    user.getUserId()
-                            );
+                BigDecimal balance =
+                        transactionService
+                                .calculateBalance(
+                                        transactions
+                                );
 
-            BigDecimal balance =
-                    income.subtract(
-                            expenses
+                BigDecimal income =
+                        BigDecimal.ZERO;
+
+                BigDecimal expenses =
+                        BigDecimal.ZERO;
+
+                for (Transaction transaction :
+                        transactions) {
+
+                    if ("INCOME".equals(
+                            transaction.getType())) {
+
+                        income = income.add(
+                                transaction.getAmount()
+                        );
+
+                    } else {
+
+                        expenses = expenses.add(
+                                transaction.getAmount()
+                        );
+                    }
+                }
+
+                return new DashboardData(
+                        transactions,
+                        income,
+                        expenses,
+                        balance
+                );
+            },
+
+            data -> {
+
+                incomeLabel.setText(
+                        "₹" + data.income()
+                );
+
+                expenseLabel.setText(
+                        "₹" + data.expenses()
+                );
+
+                balanceLabel.setText(
+                        "₹" + data.balance()
+                );
+
+                tableModel.setRowCount(0);
+
+                for (Transaction t :
+                        data.transactions()) {
+
+                    tableModel.addRow(
+                            new Object[]{
+                                    t.getTransactionId(),
+                                    t.getType(),
+                                    "₹" + t.getAmount(),
+                                    t.getDescription(),
+                                    t.getTransactionDate()
+                            }
                     );
+                }
+            },
 
-            incomeLabel.setText(
-                    "₹" + income
-            );
-
-            expenseLabel.setText(
-                    "₹" + expenses
-            );
-
-            balanceLabel.setText(
-                    "₹" + balance
-            );
-
-            loadTransactions();
-
-        } catch (Exception ex) {
-
-            JOptionPane.showMessageDialog(
+            error -> JOptionPane.showMessageDialog(
                     this,
-                    ex.getMessage(),
+                    error.getMessage(),
                     "Dashboard Error",
                     JOptionPane.ERROR_MESSAGE
-            );
-        }
-    }
+            ),
+
+            null
+
+    ).execute();
+}
 
     private void loadTransactions()
             throws Exception {
