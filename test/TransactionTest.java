@@ -12,8 +12,7 @@ class TransactionTest {
     @Test
     void incomeShouldHavePositiveImpact() {
 
-        Transaction income =
-                new Income(
+        Transaction income = new Income(
                         1,
                         1,
                         new BigDecimal("5000"),
@@ -30,8 +29,7 @@ class TransactionTest {
     @Test
     void expenseShouldHaveNegativeImpact() {
 
-        Transaction expense =
-                new Expense(
+        Transaction expense = new Expense(
                         1,
                         1,
                         new BigDecimal("1200"),
