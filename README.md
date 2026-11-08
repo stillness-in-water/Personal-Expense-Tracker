@@ -30,13 +30,46 @@ A Java Swing based Personal Expense Tracker developed as a university project.
 ## Project Structure
 
 ```text
-src/main/java/com/expense/
-├── app
-├── database
-├── model
-├── interfaces
-├── dao
-├── service
-├── exception
-├── util
-└── view
+PROJECT
+├---app
+  *....Main.java
+├---database
+  *....DBConnection.java
+  *....schema.sql
+├---model
+  *....Budget.java
+  *....Category.java
+  *....Expense.java
+  *....Income.java
+  *....Transaction.java
+  *....User.java
+├---interfaces
+  *....Repository.java
+  *....UserScopedRepository.java
+├---dao
+  *....BudgetDAO.java
+  *....CategoryDAO.java
+  *,,,,TranasactionDAO.java
+  *....UserDAO.java
+├---service
+  *....BudgetSerice.java
+  *....CategorySerice.java
+  *....TransactionSerice.java
+  *....UserSerice.java
+├---exception
+  *....ValidationException.java
+├---util
+  *....CSVExporter.java
+  *....DatabaseWorker.java
+  *....PasswordUtil.java
+|---test
+  *....AuthenticationTest.java
+  *....TransactionTest.java
+  *....UserServiceTest.java
+|---view
+  *....DashboardFrame.java
+  *....LoginFrame.java
+  *....RegisterFrame.java
+|---pom.xml
+|---README.MD
+
