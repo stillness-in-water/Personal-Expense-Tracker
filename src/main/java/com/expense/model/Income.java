@@ -16,7 +16,7 @@ public class Income extends Transaction {
 
     @Override
     public BigDecimal calculateImpact() {
-        return amount;
+        return getAmount();
     }
 
     @Override
