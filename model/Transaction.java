@@ -5,12 +5,12 @@ import java.time.LocalDate;
 
 public abstract class Transaction {
 
-    protected int transactionId;
-    protected int userId;
-    protected int categoryId;
-    protected BigDecimal amount;
-    protected String description;
-    protected LocalDate transactionDate;
+  private int transactionId;
+  private int userId;
+  private int categoryId;
+  private BigDecimal amount;
+  private String description;
+  private LocalDate transactionDate;
 
     public Transaction() {
     }
