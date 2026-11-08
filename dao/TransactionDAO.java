@@ -5,6 +5,7 @@ import com.expense.interfaces.Repository;
 import com.expense.model.Expense;
 import com.expense.model.Income;
 import com.expense.model.Transaction;
+import com.expense.interfaces.UserScopedRepository;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -181,10 +182,59 @@ public class TransactionDAO
     }
 
     @Override
-    public List<Transaction> findAll() throws Exception {
+public List<Transaction> findAll() throws Exception {
 
-        return findByUser(1);
+    List<Transaction> list = new ArrayList<>();
+
+    String sql = """
+            SELECT *
+            FROM transactions
+            ORDER BY transaction_date DESC
+            """;
+
+    try (Connection con = DBConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
+
+        while (rs.next()) {
+
+            String type = rs.getString("type");
+
+            Transaction transaction;
+
+            if ("INCOME".equals(type)) {
+
+                transaction = new Income(
+                        rs.getInt("user_id"),
+                        rs.getInt("category_id"),
+                        rs.getBigDecimal("amount"),
+                        rs.getString("description"),
+                        rs.getDate("transaction_date")
+                                .toLocalDate()
+                );
+
+            } else {
+
+                transaction = new Expense(
+                        rs.getInt("user_id"),
+                        rs.getInt("category_id"),
+                        rs.getBigDecimal("amount"),
+                        rs.getString("description"),
+                        rs.getDate("transaction_date")
+                                .toLocalDate()
+                );
+            }
+
+            transaction.setTransactionId(
+                    rs.getInt("transaction_id")
+            );
+
+            list.add(transaction);
+        }
     }
+
+    return list;
+}
 
     @Override
     public void update(Transaction transaction) throws Exception {
@@ -219,19 +269,22 @@ public class TransactionDAO
     }
 
     @Override
-    public void delete(Integer id) throws Exception {
+    public void delete(Integer id, int userId)
+        throws Exception {
 
-        String sql = """
-                DELETE FROM transactions
-                WHERE transaction_id = ?
-                """;
+    String sql = """
+            DELETE FROM transactions
+            WHERE transaction_id = ?
+            AND user_id = ?
+            """;
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+    try (Connection con = DBConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setInt(1, id);
+        ps.setInt(1, id);
+        ps.setInt(2, userId);
 
-            ps.executeUpdate();
-        }
+        ps.executeUpdate();
     }
+}
 }
