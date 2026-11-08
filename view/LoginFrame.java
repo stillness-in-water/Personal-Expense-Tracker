@@ -113,52 +113,103 @@ public class LoginFrame extends JFrame {
         });
     }
 
-    private void login() {
+ private void login() {
 
-        try {
+    String email = emailField.getText().trim();
 
-            String email =
-                    emailField.getText();
+    String password =
+            new String(passwordField.getPassword());
 
-            String password =
-                    new String(
-                            passwordField.getPassword()
+    if (email.isBlank() || password.isBlank()) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Email and password are required.",
+                "Validation Error",
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        return;
+    }
+
+    JButton sourceButton = null;
+
+    for (Component component :
+            ((JPanel) getContentPane()
+                    .getComponent(0))
+                    .getComponents()) {
+
+        if (component instanceof JPanel panel) {
+
+            for (Component child :
+                    panel.getComponents()) {
+
+                if (child instanceof JButton button &&
+                        "Login".equals(
+                                button.getText())) {
+
+                    sourceButton = button;
+                }
+            }
+        }
+    }
+
+    private final JButton loginButton =
+        new JButton("Login");
+
+    if (loginButton != null) {
+        loginButton.setEnabled(false);
+    }
+
+    new com.expense.util.DatabaseWorker<>(
+            () -> {
+
+                UserService service =
+                        new UserService();
+
+                return service.login(
+                        email,
+                        password
+                );
+            },
+
+            user -> {
+
+                if (user == null) {
+
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Invalid email or password.",
+                            "Login Failed",
+                            JOptionPane.ERROR_MESSAGE
                     );
 
-            UserService service =
-                    new UserService();
+                    return;
+                }
 
-            User user =
-                    service.login(
-                            email,
-                            password
-                    );
+                dispose();
 
-            if (user == null) {
+                new DashboardFrame(user)
+                        .setVisible(true);
+            },
+
+            error -> {
 
                 JOptionPane.showMessageDialog(
                         this,
-                        "Invalid email or password.",
-                        "Login Failed",
+                        error.getMessage(),
+                        "Database Error",
                         JOptionPane.ERROR_MESSAGE
                 );
+            },
 
-                return;
+            () -> {
+
+                if (loginButton != null) {
+                    loginButton.setEnabled(true);
+                }
             }
 
-            dispose();
-
-            new DashboardFrame(user)
-                    .setVisible(true);
-
-        } catch (Exception ex) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    ex.getMessage(),
-                    "Database Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-        }
-    }
+    ).execute();
+}
 }
