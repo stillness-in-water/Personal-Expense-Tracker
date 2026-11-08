@@ -50,9 +50,6 @@ public class RegisterFrame extends JFrame {
         addRow(panel, gbc, 3,
                 new JLabel("Password"), passwordField);
 
-        JButton registerButton =
-                new JButton("Register");
-
         JButton backButton =
                 new JButton("Back to Login");
 
@@ -68,6 +65,8 @@ public class RegisterFrame extends JFrame {
         panel.add(buttons, gbc);
 
         add(panel);
+
+        getRootPane().setDefaultButton(registerButton);
 
         registerButton.addActionListener(e ->
                 register());
