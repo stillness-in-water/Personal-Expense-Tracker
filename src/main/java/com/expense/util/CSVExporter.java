@@ -1,50 +1,74 @@
 package com.expense.util;
 
+import com.expense.interfaces.Exporter;
 import com.expense.model.Transaction;
 
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
 
-public class CSVExporter {
 
-    private CSVExporter() {
+public class CSVExporter implements Exporter<Transaction> {
+
+    private final Map<Integer, String> categoryNames;
+
+    public CSVExporter() {
+        this(Map.of());
     }
 
-    public static void exportTransactions(
-            List<Transaction> transactions,
-            File file) throws Exception {
+    public CSVExporter(Map<Integer, String> categoryNames) {
+        this.categoryNames = Map.copyOf(categoryNames);
+    }
 
-        try (PrintWriter writer =
-                     new PrintWriter(new FileWriter(file))) {
+    @Override
+    public void export(List<Transaction> transactions, File file)
+            throws Exception {
 
-            writer.println(
-                    "Transaction ID,Type,Amount,Description,Date"
+        try (BufferedWriter writer = Files.newBufferedWriter(
+                file.toPath(), StandardCharsets.UTF_8)) {
+
+            writer.write(
+                    "Transaction ID,Type,Category,Amount,Description,Date"
             );
+            writer.newLine();
 
             for (Transaction t : transactions) {
 
-                writer.printf(
-                        "%d,%s,%s,%s,%s%n",
-                        t.getTransactionId(),
-                        t.getType(),
-                        t.getAmount(),
-                        escape(t.getDescription()),
-                        t.getTransactionDate()
+                String category = categoryNames.getOrDefault(
+                        t.getCategoryId(),
+                        "Category " + t.getCategoryId()
                 );
+
+                writer.write(String.join(",",
+                        String.valueOf(t.getTransactionId()),
+                        t.getType(),
+                        escape(category),
+                        t.getAmount().toPlainString(),
+                        escape(t.getDescription()),
+                        t.getTransactionDate().toString()
+                ));
+
+                writer.newLine();
             }
         }
     }
 
-    private static String escape(String value) {
+   
+    static String escape(String value) {
 
         if (value == null) {
             return "";
         }
 
-        return "\"" +
-                value.replace("\"", "\"\"") +
-                "\"";
+        String safe = value;
+
+        if (!safe.isEmpty() && "=+-@".indexOf(safe.charAt(0)) >= 0) {
+            safe = "'" + safe;
+        }
+
+        return "\"" + safe.replace("\"", "\"\"") + "\"";
     }
 }
