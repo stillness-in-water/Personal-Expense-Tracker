@@ -1,10 +1,12 @@
 package com.expense.database;
 
+import com.expense.exception.DatabaseException;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class DBConnection {
+public final class DBConnection {
 
     private static final String URL =
             System.getenv().getOrDefault(
@@ -27,13 +29,30 @@ public class DBConnection {
     private DBConnection() {
     }
 
-    public static Connection getConnection()
-            throws SQLException {
+    public static Connection getConnection() throws DatabaseException {
 
-        return DriverManager.getConnection(
-                URL,
-                USER,
-                PASSWORD
-        );
+        try {
+            return DriverManager.getConnection(URL, USER, PASSWORD);
+
+        } catch (SQLException e) {
+            throw new DatabaseException(
+                    "Could not connect to the database. Make sure MySQL "
+                            + "is running and that DB_URL, DB_USER and "
+                            + "DB_PASSWORD are set correctly.",
+                    e
+            );
+        }
+    }
+
+    public static void testConnection() throws DatabaseException {
+
+        try (Connection ignored = getConnection()) {
+
+        } catch (SQLException e) {
+            throw new DatabaseException(
+                    "The database connection could not be closed cleanly.",
+                    e
+            );
+        }
     }
 }
