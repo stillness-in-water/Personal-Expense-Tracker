@@ -1,8 +1,12 @@
 package com.expense.app;
 
+import com.expense.database.DBConnection;
+import com.expense.util.DatabaseWorker;
 import com.expense.view.LoginFrame;
 
-import javax.swing.*;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 public class Main {
 
@@ -13,15 +17,30 @@ public class Main {
             try {
 
                 UIManager.setLookAndFeel(
-                        UIManager
-                                .getSystemLookAndFeelClassName()
+                        UIManager.getSystemLookAndFeelClassName()
                 );
 
             } catch (Exception ignored) {
+            
             }
 
-            new LoginFrame()
-                    .setVisible(true);
+            LoginFrame login = new LoginFrame();
+            login.setVisible(true);
+       
+            new DatabaseWorker<Boolean>(
+                    () -> {
+                        DBConnection.testConnection();
+                        return true;
+                    },
+                    connected -> { },
+                    error -> JOptionPane.showMessageDialog(
+                            login,
+                            error.getMessage(),
+                            "Database Unavailable",
+                            JOptionPane.WARNING_MESSAGE
+                    ),
+                    null
+            ).execute();
         });
     }
 }
