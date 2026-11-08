@@ -70,46 +70,33 @@ Generic interfaces above; `DatabaseWorker<T>`; `JdbcHelper.toList(ResultSet, Row
 ## Project Structure
 
 ```text
-PROJECT
-├---app
-  *....Main.java
-├---database
-  *....DBConnection.java
-  *....schema.sql
-├---model
-  *....Budget.java
-  *....Category.java
-  *....Expense.java
-  *....Income.java
-  *....Transaction.java
-  *....User.java
-├---interfaces
-  *....Repository.java
-  *....UserScopedRepository.java
-├---dao
-  *....BudgetDAO.java
-  *....CategoryDAO.java
-  *,,,,TranasactionDAO.java
-  *....UserDAO.java
-├---service
-  *....BudgetSerice.java
-  *....CategorySerice.java
-  *....TransactionSerice.java
-  *....UserSerice.java
-├---exception
-  *....ValidationException.java
-├---util
-  *....CSVExporter.java
-  *....DatabaseWorker.java
-  *....PasswordUtil.java
-|---test
-  *....AuthenticationTest.java
-  *....TransactionTest.java
-  *....UserServiceTest.java
-|---view
-  *....DashboardFrame.java
-  *....LoginFrame.java
-  *....RegisterFrame.java
-|---pom.xml
-|---README.MD
-
+Personal-Expense-Tracker/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/
+│   │   │       └── expense/
+│   │   │           ├── app/
+│   │   │           ├── dao/
+│   │   │           ├── database/
+│   │   │           ├── exception/
+│   │   │           ├── interfaces/
+│   │   │           ├── model/
+│   │   │           ├── service/
+│   │   │           ├── util/
+│   │   │           └── view/
+│   │   └── resources/
+│   │
+│   └── test/
+│       └── java/
+│           └── com/
+│               └── expense/
+│                   └── test/
+│                       ├── AuthenticationTest.java
+│                       ├── TransactionTest.java
+│                       └── UserServiceTest.java
+│
+├── database/
+│   └── schema.sql
+├── pom.xml
+└── README.md
