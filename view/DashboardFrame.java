@@ -303,10 +303,14 @@ public class DashboardFrame extends JFrame {
 
         try {
 
-            List<Category> categories =
-                    categoryDAO.findByUser(
-                            user.getUserId()
-                    );
+           CategoryService categoryService =
+               new CategoryService();
+
+          List<Category> categories =
+                categoryService.getCategories(
+                user.getUserId(),
+                type
+        );
 
             JComboBox<Category> categoryBox =
                     new JComboBox<>();
@@ -578,51 +582,66 @@ public class DashboardFrame extends JFrame {
         }
     }
 
-    private void exportCSV() {
+private void exportCSV() {
 
-        try {
+    JFileChooser chooser =
+            new JFileChooser();
 
-            List<Transaction> transactions =
-                    transactionService
-                            .getTransactions(
-                                    user.getUserId()
-                            );
+    chooser.setSelectedFile(
+            new File("expense-report.csv")
+    );
 
-            JFileChooser chooser =
-                    new JFileChooser();
+    if (chooser.showSaveDialog(this)
+            != JFileChooser.APPROVE_OPTION) {
 
-            chooser.setSelectedFile(
-                    new File(
-                            "expense-report.csv"
-                    )
-            );
+        return;
+    }
 
-            if (chooser.showSaveDialog(
-                    this
-            ) == JFileChooser.APPROVE_OPTION) {
+    File file =
+            chooser.getSelectedFile();
 
-                CSVExporter
-                        .exportTransactions(
-                                transactions,
-                                chooser.getSelectedFile()
-                        );
+    new com.expense.util.DatabaseWorker<>(
+            () -> transactionService
+                    .getTransactions(
+                            user.getUserId()
+                    ),
 
-                JOptionPane.showMessageDialog(
-                        this,
-                        "CSV exported successfully."
-                );
-            }
+            transactions -> {
 
-        } catch (Exception ex) {
+                try {
 
-            JOptionPane.showMessageDialog(
+                    CSVExporter.exportTransactions(
+                            transactions,
+                            file
+                    );
+
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "CSV exported successfully."
+                    );
+
+                } catch (Exception ex) {
+
+                    JOptionPane.showMessageDialog(
+                            this,
+                            ex.getMessage(),
+                            "Export Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            },
+
+            error -> JOptionPane.showMessageDialog(
                     this,
-                    ex.getMessage(),
+                    error.getMessage(),
                     "Export Error",
                     JOptionPane.ERROR_MESSAGE
-            );
-        }
-    }
+            ),
+
+            null
+
+    ).execute();
+}
 
     private void addBudget() {
 
