@@ -1,5 +1,6 @@
 package com.expense.dao;
 
+import com.expense.interfaces.UserScopedRepository;
 import com.expense.database.DBConnection;
 import com.expense.interfaces.Repository;
 import com.expense.model.Budget;
@@ -9,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class BudgetDAO implements Repository<Budget, Integer> {
+public class BudgetDAO implements UserScopedRepository<Budget, Integer> {
 
     @Override
     public void save(Budget budget) throws Exception {
@@ -118,10 +119,24 @@ public class BudgetDAO implements Repository<Budget, Integer> {
     }
 
     @Override
-    public List<Budget> findAll() throws Exception {
+    public void delete(Integer id, int userId)
+        throws Exception {
 
-        return findByUser(1);
+    String sql = """
+            DELETE FROM budgets
+            WHERE budget_id = ?
+            AND user_id = ?
+            """;
+
+    try (Connection con = DBConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+
+        ps.setInt(1, id);
+        ps.setInt(2, userId);
+
+        ps.executeUpdate();
     }
+}
 
     @Override
     public void update(Budget budget) throws Exception {
