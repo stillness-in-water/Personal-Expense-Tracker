@@ -5,9 +5,22 @@ import com.expense.exception.ValidationException;
 import com.expense.model.User;
 import com.expense.util.PasswordUtil;
 
+import java.util.regex.Pattern;
+
 public class UserService {
 
-    private final UserDAO userDAO = new UserDAO();
+    private static final Pattern EMAIL =
+            Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
+
+    private final UserDAO userDAO;
+
+    public UserService() {
+        this(new UserDAO());
+    }
+
+    public UserService(UserDAO userDAO) {
+        this.userDAO = userDAO;
+    }
 
     public void register(String name,
                          String email,
@@ -17,7 +30,7 @@ public class UserService {
             throw new ValidationException("Name is required.");
         }
 
-        if (email == null || !email.contains("@")) {
+        if (email == null || !EMAIL.matcher(email.trim()).matches()) {
             throw new ValidationException("Enter a valid email.");
         }
 
@@ -27,24 +40,52 @@ public class UserService {
             );
         }
 
-        if (userDAO.emailExists(email)) {
+        String cleanEmail = email.trim();
+
+        if (userDAO.emailExists(cleanEmail)) {
             throw new ValidationException(
                     "Email is already registered."
             );
         }
 
-        String hash = PasswordUtil.hashPassword(password);
+        User user = new User(
+                name.trim(),
+                cleanEmail,
+                PasswordUtil.hashPassword(password)
+        );
 
-        userDAO.save(
-                new User(name, email, hash)
+        userDAO.saveWithDefaultCategories(
+                user,
+                CategoryService.defaultCategories()
         );
     }
 
-    public User login(String email,
-                      String password) throws Exception {
 
-        String hash = PasswordUtil.hashPassword(password);
+    public User login(String email, String password) throws Exception {
 
-        return userDAO.login(email, hash);
+        if (email == null || email.isBlank()
+                || password == null || password.isEmpty()) {
+
+            throw new ValidationException(
+                    "Email and password are required."
+            );
+        }
+
+        User user = userDAO.findByEmail(email.trim());
+
+        if (user == null
+                || !PasswordUtil.verifyPassword(
+                        password, user.getPasswordHash())) {
+
+            return null;
+        }
+
+        if (PasswordUtil.needsUpgrade(user.getPasswordHash())) {
+
+            user.setPasswordHash(PasswordUtil.hashPassword(password));
+            userDAO.update(user);
+        }
+
+        return user;
     }
 }
