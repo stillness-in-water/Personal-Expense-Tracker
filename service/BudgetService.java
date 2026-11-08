@@ -11,7 +11,7 @@ public class BudgetService {
 
     private final BudgetDAO dao = new BudgetDAO();
 
-    public void addBudget(Budget budget)
+    public synchronized void addBudget(Budget budget)
             throws Exception {
 
         if (budget.getAmountLimit() == null ||
