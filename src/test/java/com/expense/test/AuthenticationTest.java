@@ -1,105 +1,143 @@
 package com.expense.service;
 
-import com.expense.dao.UserDAO;
+import com.expense.exception.ValidationException;
 import com.expense.model.User;
+import com.expense.testsupport.FakeUserDAO;
 import com.expense.util.PasswordUtil;
 import org.junit.jupiter.api.Test;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AuthenticationTest {
 
+    private static final String EMAIL = "test@example.com";
+    private static final String PASSWORD = "password123";
+
+    private static FakeUserDAO daoWithUser(String storedHash) {
+
+        FakeUserDAO dao = new FakeUserDAO();
+
+        dao.byEmail.put(
+                EMAIL,
+                new User(1, "Test User", EMAIL, storedHash)
+        );
+
+        return dao;
+    }
+
     @Test
     void validCredentialsShouldAuthenticate() throws Exception {
 
-        String email = "test@example.com";
-        String password = "password123";
+        UserService service = new UserService(
+                daoWithUser(PasswordUtil.hashPassword(PASSWORD)));
 
-        User expectedUser = new User(
-                1,
-                "Test User",
-                email,
-                PasswordUtil.hashPassword(password)
-        );
-
-        UserDAO fakeDAO = new UserDAO() {
-            @Override
-            public User login(String requestedEmail,
-                              String passwordHash) {
-                if (email.equals(requestedEmail)
-                        && expectedUser.getPasswordHash().equals(passwordHash)) {
-                    return expectedUser;
-                }
-
-                return null;
-            }
-        };
-
-        UserService service = new UserService(fakeDAO);
-
-        User result = service.login(email, password);
+        User result = service.login(EMAIL, PASSWORD);
 
         assertNotNull(result);
-        assertEquals(email, result.getEmail());
+        assertEquals(EMAIL, result.getEmail());
         assertEquals("Test User", result.getName());
     }
 
     @Test
     void invalidPasswordShouldFailAuthentication() throws Exception {
 
-        String email = "test@example.com";
-        String correctPassword = "password123";
+        UserService service = new UserService(
+                daoWithUser(PasswordUtil.hashPassword(PASSWORD)));
 
-        User expectedUser = new User(
-                1,
-                "Test User",
-                email,
-                PasswordUtil.hashPassword(correctPassword)
-        );
-
-        UserDAO fakeDAO = new UserDAO() {
-            @Override
-            public User login(String requestedEmail,
-                              String passwordHash) {
-                if (email.equals(requestedEmail)
-                        && expectedUser.getPasswordHash().equals(passwordHash)) {
-                    return expectedUser;
-                }
-
-                return null;
-            }
-        };
-
-        UserService service = new UserService(fakeDAO);
-
-        User result = service.login(
-                email,
-                "wrongpassword"
-        );
-
-        assertNull(result);
+        assertNull(service.login(EMAIL, "wrongpassword"));
     }
 
     @Test
-    void invalidEmailShouldFailRegistrationValidation()
-            throws Exception {
+    void unknownEmailShouldFailAuthentication() throws Exception {
 
-        UserDAO fakeDAO = new UserDAO() {
-            @Override
-            public boolean emailExists(String email) {
-                return false;
-            }
-        };
+        UserService service = new UserService(
+                daoWithUser(PasswordUtil.hashPassword(PASSWORD)));
 
-        UserService service = new UserService(fakeDAO);
+        assertNull(service.login("nobody@example.com", PASSWORD));
+    }
+
+    @Test
+    void emailIsTrimmedBeforeTheLookup() throws Exception {
+
+        UserService service = new UserService(
+                daoWithUser(PasswordUtil.hashPassword(PASSWORD)));
+
+        assertNotNull(service.login("  " + EMAIL + "  ", PASSWORD));
+    }
+
+    @Test
+    void blankCredentialsShouldBeRejected() {
+
+        UserService service = new UserService(
+                daoWithUser(PasswordUtil.hashPassword(PASSWORD)));
+
+        assertThrows(ValidationException.class,
+                () -> service.login("", PASSWORD));
+
+        assertThrows(ValidationException.class,
+                () -> service.login(EMAIL, ""));
+
+        assertThrows(ValidationException.class,
+                () -> service.login(null, null));
+    }
+
+    @Test
+    void oldSha256AccountCanLogInAndIsUpgraded() throws Exception {
+
+        FakeUserDAO dao = daoWithUser(sha256Hex(PASSWORD));
+
+        User result = new UserService(dao).login(EMAIL, PASSWORD);
+
+        assertNotNull(result);
+
+        assertEquals(1, dao.updated.size());
+
+        String upgraded = dao.updated.get(0).getPasswordHash();
+
+        assertTrue(upgraded.startsWith("pbkdf2$"));
+        assertTrue(PasswordUtil.verifyPassword(PASSWORD, upgraded));
+    }
+
+    @Test
+    void currentHashesAreNotRewrittenOnLogin() throws Exception {
+
+        FakeUserDAO dao =
+                daoWithUser(PasswordUtil.hashPassword(PASSWORD));
+
+        new UserService(dao).login(EMAIL, PASSWORD);
+
+        assertTrue(dao.updated.isEmpty());
+    }
+
+    @Test
+    void invalidEmailShouldFailRegistrationValidation() {
+
+        UserService service = new UserService(new FakeUserDAO());
 
         assertThrows(
-                com.expense.exception.ValidationException.class,
+                ValidationException.class,
                 () -> service.register(
                         "Test User",
                         "invalid-email",
-                        "password123"
+                        PASSWORD
                 )
         );
+    }
+
+    private static String sha256Hex(String text) throws Exception {
+
+        byte[] hash = MessageDigest.getInstance("SHA-256")
+                .digest(text.getBytes(StandardCharsets.UTF_8));
+
+        StringBuilder hex = new StringBuilder();
+
+        for (byte b : hash) {
+            hex.append(String.format("%02x", b));
+        }
+
+        return hex.toString();
     }
 }
