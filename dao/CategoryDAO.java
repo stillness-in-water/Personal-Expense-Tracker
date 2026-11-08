@@ -1,5 +1,6 @@
 package com.expense.dao;
 
+import com.expense.interfaces.UserScopedRepository;
 import com.expense.database.DBConnection;
 import com.expense.interfaces.Repository;
 import com.expense.model.Category;
@@ -9,7 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class CategoryDAO implements Repository<Category, Integer> {
+public class CategoryDAO
+        implements UserScopedRepository<Category, Integer>
 
     @Override
     public void save(Category category) throws Exception {
@@ -95,8 +97,34 @@ public class CategoryDAO implements Repository<Category, Integer> {
     @Override
     public List<Category> findAll() throws Exception {
 
-        return findByUser(1);
+        List<Category> categories = new ArrayList<>();
+
+        String sql = """
+            SELECT *
+            FROM categories
+            ORDER BY category_name
+            """;
+
+    try (Connection con = DBConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
+
+        while (rs.next()) {
+
+            categories.add(
+                    new Category(
+                            rs.getInt("category_id"),
+                            rs.getInt("user_id"),
+                            rs.getString("category_name"),
+                            rs.getString("type")
+                    )
+            );
+        }
     }
+
+    return categories;
+}
+    
 
     @Override
     public void update(Category category) throws Exception {
@@ -120,16 +148,21 @@ public class CategoryDAO implements Repository<Category, Integer> {
     }
 
     @Override
-    public void delete(Integer id) throws Exception {
+      public void delete(Integer id, int userId)
+        throws Exception {
 
-        String sql =
-                "DELETE FROM categories WHERE category_id = ?";
+      String sql = """
+            DELETE FROM categories
+            WHERE category_id = ?
+            AND user_id = ?
+            """;
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+      try (Connection con = DBConnection.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setInt(1, id);
-            ps.executeUpdate();
-        }
+        ps.setInt(1, id);
+        ps.setInt(2, userId);
+
+        ps.executeUpdate();
     }
 }
