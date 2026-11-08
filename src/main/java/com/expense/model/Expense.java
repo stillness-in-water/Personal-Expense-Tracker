@@ -16,7 +16,7 @@ public class Expense extends Transaction {
 
     @Override
     public BigDecimal calculateImpact() {
-        return amount.negate();
+        return getAmount().negate();
     }
 
     @Override
