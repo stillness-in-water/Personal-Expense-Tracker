@@ -287,4 +287,19 @@ public List<Transaction> findAll() throws Exception {
         ps.executeUpdate();
     }
 }
+
+public BigDecimal calculateBalance(
+        List<Transaction> transactions) {
+
+    BigDecimal balance = BigDecimal.ZERO;
+
+    for (Transaction transaction : transactions) {
+        balance = balance.add(
+                transaction.calculateImpact()
+        );
+    }
+
+    return balance;
+}
+                
 }
