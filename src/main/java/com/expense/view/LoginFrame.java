@@ -1,6 +1,5 @@
 package com.expense.view;
 
-import com.expense.model.User;
 import com.expense.service.UserService;
 
 import javax.swing.*;
@@ -13,6 +12,9 @@ public class LoginFrame extends JFrame {
 
     private final JPasswordField passwordField =
             new JPasswordField();
+
+    private final JButton loginButton =
+            new JButton("Login");
 
     public LoginFrame() {
 
@@ -80,9 +82,6 @@ public class LoginFrame extends JFrame {
                 gbc
         );
 
-        JButton loginButton =
-                new JButton("Login");
-
         JButton registerButton =
                 new JButton("Create Account");
 
@@ -100,6 +99,8 @@ public class LoginFrame extends JFrame {
 
         add(panel);
 
+        getRootPane().setDefaultButton(loginButton);
+
         loginButton.addActionListener(
                 e -> login()
         );
@@ -113,103 +114,70 @@ public class LoginFrame extends JFrame {
         });
     }
 
- private void login() {
+    private void login() {
 
-    String email = emailField.getText().trim();
+        String email = emailField.getText().trim();
 
-    String password =
-            new String(passwordField.getPassword());
+        String password =
+                new String(passwordField.getPassword());
 
-    if (email.isBlank() || password.isBlank()) {
+        if (email.isBlank() || password.isBlank()) {
 
-        JOptionPane.showMessageDialog(
-                this,
-                "Email and password are required.",
-                "Validation Error",
-                JOptionPane.WARNING_MESSAGE
-        );
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Email and password are required.",
+                    "Validation Error",
+                    JOptionPane.WARNING_MESSAGE
+            );
 
-        return;
-    }
-
-    JButton sourceButton = null;
-
-    for (Component component :
-            ((JPanel) getContentPane()
-                    .getComponent(0))
-                    .getComponents()) {
-
-        if (component instanceof JPanel panel) {
-
-            for (Component child :
-                    panel.getComponents()) {
-
-                if (child instanceof JButton button &&
-                        "Login".equals(
-                                button.getText())) {
-
-                    sourceButton = button;
-                }
-            }
+            return;
         }
-    }
 
-    private final JButton loginButton =
-        new JButton("Login");
-
-    if (loginButton != null) {
         loginButton.setEnabled(false);
-    }
 
-    new com.expense.util.DatabaseWorker<>(
-            () -> {
+        new com.expense.util.DatabaseWorker<>(
+                () -> {
 
-                UserService service =
-                        new UserService();
+                    UserService service =
+                            new UserService();
 
-                return service.login(
-                        email,
-                        password
-                );
-            },
-
-            user -> {
-
-                if (user == null) {
-
-                    JOptionPane.showMessageDialog(
-                            this,
-                            "Invalid email or password.",
-                            "Login Failed",
-                            JOptionPane.ERROR_MESSAGE
+                    return service.login(
+                            email,
+                            password
                     );
+                },
 
-                    return;
-                }
+                user -> {
 
-                dispose();
+                    if (user == null) {
 
-                new DashboardFrame(user)
-                        .setVisible(true);
-            },
+                        passwordField.setText("");
 
-            error -> {
+                        JOptionPane.showMessageDialog(
+                                this,
+                                "Invalid email or password.",
+                                "Login Failed",
+                                JOptionPane.ERROR_MESSAGE
+                        );
 
-                JOptionPane.showMessageDialog(
+                        return;
+                    }
+
+                    dispose();
+
+                    new DashboardFrame(user)
+                            .setVisible(true);
+                },
+
+                error -> JOptionPane.showMessageDialog(
                         this,
                         error.getMessage(),
                         "Database Error",
                         JOptionPane.ERROR_MESSAGE
-                );
-            },
+                ),
 
-            () -> {
+                () -> loginButton.setEnabled(true)
 
-                if (loginButton != null) {
-                    loginButton.setEnabled(true);
-                }
-            }
-
-    ).execute();
-}
+        ).execute();
+    }
 }
