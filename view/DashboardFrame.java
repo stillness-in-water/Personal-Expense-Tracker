@@ -1,6 +1,5 @@
 package com.expense.view;
 
-import com.expense.dao.CategoryDAO;
 import com.expense.model.Category;
 import com.expense.model.Expense;
 import com.expense.model.Income;
@@ -24,9 +23,6 @@ public class DashboardFrame extends JFrame {
 
     private final TransactionService transactionService =
             new TransactionService();
-
-    private final CategoryDAO categoryDAO =
-            new CategoryDAO();
 
     private final BudgetService budgetService =
             new BudgetService();
