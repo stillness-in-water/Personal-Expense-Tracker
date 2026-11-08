@@ -11,7 +11,9 @@ public class RegisterFrame extends JFrame {
     private final JTextField emailField = new JTextField();
     private final JPasswordField passwordField =
             new JPasswordField();
-
+    private final JButton registerButton =
+        new JButton("Register");
+    
     public RegisterFrame() {
 
         setTitle("Create Account");
@@ -103,42 +105,61 @@ public class RegisterFrame extends JFrame {
         }
     }
 
-    private void register() {
+ private void register() {
 
-        try {
+    String name =
+            nameField.getText().trim();
 
-            String name = nameField.getText();
-            String email = emailField.getText();
+    String email =
+            emailField.getText().trim();
 
-            String password =
-                    new String(passwordField.getPassword());
-
-            UserService service =
-                    new UserService();
-
-            service.register(
-                    name,
-                    email,
-                    password
+    String password =
+            new String(
+                    passwordField.getPassword()
             );
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Registration successful!"
-            );
+    registerButton.setEnabled(false);
 
-            dispose();
+    new com.expense.util.DatabaseWorker<Void>(
+            () -> {
 
-            new LoginFrame().setVisible(true);
+                UserService service =
+                        new UserService();
 
-        } catch (Exception ex) {
+                service.register(
+                        name,
+                        email,
+                        password
+                );
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    ex.getMessage(),
-                    "Registration Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-        }
-    }
+                return null;
+            },
+
+            ignored -> {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Registration successful!"
+                );
+
+                dispose();
+
+                new LoginFrame()
+                        .setVisible(true);
+            },
+
+            error -> {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        error.getMessage(),
+                        "Registration Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            },
+
+            () -> registerButton.setEnabled(true)
+
+    ).execute();
+}
 }
